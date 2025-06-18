@@ -1338,18 +1338,18 @@ Hier sind alle Prüfungsfragen aus den bereitgestellten Quellen im Markdown-Form
             agendaSidebar.classList.toggle('hidden');
             if (agendaSidebar.classList.contains('hidden')) {
                 toggleAgendaBtn.textContent = 'Agenda einblenden';
-                document.querySelector('main').classList.remove('md:flex-row'); // Adjust main layout
-                document.querySelector('main').classList.add('md:flex-col');
+                // When agenda is hidden, main content takes full width
                 document.querySelector('section').classList.remove('md:w-3/4');
                 document.querySelector('section').classList.add('md:w-full');
-
             } else {
                 toggleAgendaBtn.textContent = 'Agenda ausblenden';
-                document.querySelector('main').classList.add('md:flex-row'); // Adjust main layout
-                document.querySelector('main').classList.remove('md:flex-col');
-                document.querySelector('section').classList.add('md:w-3/4');
+                // When agenda is visible, main content takes 3/4 width
                 document.querySelector('section').classList.remove('md:w-full');
+                document.querySelector('section').classList.add('md:w-3/4');
             }
+            // Ensure main layout is flex-row when agenda is toggled, if screen size allows
+            document.querySelector('main').classList.add('md:flex-row');
+            document.querySelector('main').classList.remove('md:flex-col');
         });
 
         // Initialize display state on page load
@@ -1360,6 +1360,10 @@ Hier sind alle Prüfungsfragen aus den bereitgestellten Quellen im Markdown-Form
             restartQuizBtn.classList.add('hidden');
             agendaSidebar.classList.add('hidden'); // Ensure agenda is hidden on load
             toggleAgendaBtn.textContent = 'Agenda einblenden'; // Initial button text
+
+            // Adjust main layout for initial state (agenda hidden)
+            document.querySelector('section').classList.add('md:w-full');
+            document.querySelector('section').classList.remove('md:w-3/4');
         });
     </script>
 </body>
