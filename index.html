@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI und AI Abschlussprüfungs-Training</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            color: #1f2937; /* Dark gray text */
+        }
+        /* Custom scrollbar for agenda */
+        .agenda-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .agenda-scroll::-webkit-scrollbar-track {
+            background: #e5e7eb; /* Lighter track */
+            border-radius: 10px;
+        }
+        .agenda-scroll::-webkit-scrollbar-thumb {
+            background: #9ca3af; /* Gray thumb */
+            border-radius: 10px;
+        }
+        .agenda-scroll::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* Darker gray on hover */
+        }
+        /* Style for disabled inputs */
+        input[type="radio"]:disabled + label,
+        input[type="checkbox"]:disabled + label {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg p-6">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <h1 class="text-3xl font-bold mb-2 md:mb-0">KI und AI Abschlussprüfungs-Training</h1>
+            <div class="flex items-center space-x-4">
+                <span id="timer" class="text-2xl font-semibold bg-white text-blue-800 py-2 px-4 rounded-lg shadow-md hidden">01:30:00</span>
+                <button id="toggle-agenda-btn" class="bg-white text-blue-800 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200 ease-in-out">
+                    Agenda einblenden
+                </button>
+                <button id="restart-quiz-btn" class="bg-white text-blue-800 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200 ease-in-out hidden">
+                    Quiz neu starten
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex flex-1 flex-col md:flex-row p-4 gap-4 container mx-auto">
+        <!-- Left Sidebar - Agenda -->
+        <aside id="agenda-sidebar" class="w-full md:w-1/4 bg-white p-4 rounded-lg shadow-md overflow-hidden flex flex-col hidden">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Agenda (Fragen & Antworten)</h2>
+            <div id="agenda-list" class="flex-1 overflow-y-auto agenda-scroll">
+                <!-- Agenda items will be populated here by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Right Main Content -->
+        <section class="w-full md:w-3/4 bg-white p-6 rounded-lg shadow-md flex flex-col">
+            <!-- Start Screen -->
+            <div id="start-screen" class="flex flex-col items-center justify-center flex-1 text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Willkommen zum KI und AI Abschlussprüfungs-Training!</h2>
+                <p class="text-lg text-gray-700 mb-8">Bereite dich optimal auf deine Prüfung vor. Es werden 100 zufällige Fragen gestellt, und du hast 1 Stunde 30 Minuten Zeit.</p>
+                <button id="start-quiz-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors duration-200 ease-in-out">
+                    Quiz starten
+                </button>
+            </div>
+
+            <!-- Quiz Container (initially hidden) -->
+            <div id="quiz-container" class="flex-1 flex flex-col justify-between hidden">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Frage <span id="current-question-number">1</span> von <span id="total-questions">100</span></p>
+                    <h2 id="question-text" class="text-2xl font-bold mb-6 text-gray-900">Fragentext hier</h2>
+                    <div id="options-container" class="space-y-4">
+                        <!-- Options will be populated here by JavaScript -->
+                    </div>
+                    <!-- Navigation and Action Buttons - Moved here -->
+                    <div class="mt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                        <div class="flex space-x-4 w-full sm:w-auto justify-center">
+                            <button id="prev-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg shadow transition-colors duration-200 ease-in-out" disabled>Zurück</button>
+                            <button id="next-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors duration-200 ease-in-out">Weiter</button>
+                        </div>
+                        <div class="flex space-x-4 w-full sm:w-auto justify-center">
+                            <button id="read-aloud-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors duration-200 ease-in-out">
+                                <svg class="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9.383 3.003A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.29zm4.316 4.907a1 1 0 011.414 0 3 3 0 010 4.242 1 1 0 01-1.414 0 1 1 0 00-1.414 1.414 5 5 0 000-7.07 1 1 0 011.414 0zm3.535-3.536a1 1 0 011.414 0 5 5 0 010 7.071 1 1 0 01-1.414 0 1 1 0 00-1.414 1.414 7 7 0 000-9.899 1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                Vorlesen
+                            </button>
+                            <button id="submit-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors duration-200 ease-in-out">Antwort abgeben</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Result Modal -->
+            <div id="result-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div class="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full text-center">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Quiz beendet!</h2>
+                    <p class="text-xl text-gray-700 mb-6">Du hast <span id="correct-answers-count">0</span> von <span id="total-questions-modal">100</span> Fragen richtig beantwortet.</p>
+                    <button id="close-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors duration-200 ease-in-out">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8">
+        <p>&copy; 2025 KI und AI Abschlussprüfungs-Training</p>
+    </footer>
+
+    <script>
+        const questionsMarkdown = `
+##### Fragen zu KI und Big Data
+Hier sind alle Prüfungsfragen aus den bereitgestellten Quellen im Markdown-Format, wobei die richtigen Antworten fett markiert sind:
+
+--------------------------------------------------------------------------------
+
+**1. Frage B - Frage 08** Was ist der Hauptunterschied zwischen Supervised und Unsupervised Learning?
+* **Supervised Learning benötigt gelabelte Daten für das Training, während Unsupervised Learning ohne vordefinierte Labels arbeitet.**
+* Unsupervised Learning wird ausschließlich in der Robotik eingesetzt.
+* Supervised Learning ist weniger genau als Unsupervised Learning.
+* Supervised Learning wird hauptsächlich für textbasierte Daten verwendet, während Unsupervised Learning sich auf bildbasierte Daten konzentriert.
+
+**2. Frage A - Frage 48** Welches Framework eignet sich am besten für die Verarbeitung von Daten im Bereich Big Data Analytics?
+* 5G
+* **Apache Hadoop**
+* Echtzeit-Analytik-Framework
+* Stapelverarbeitungs-Framework
+**3. Frage B - Frage 18** Welche Rolle spielt Edge-Computing im Kontext von Big Data und KI?
+* **Edge-Computing ermöglicht die Verarbeitung von Daten nah an der Quelle.**
+* Edge-Computing sorgt für die Verschlüsselung von Daten.
+* Edge-Computing ermöglicht einen verbesserten Zugriff auf Daten in der Cloud.
+* Edge-Computing ist für die Speicherung großer Datenmengen verantwortlich.
+
+**4. Frage B - Frage 37** Welche Aussagen über Naive Bayes sind korrekt?
+* Sie gehören zu den unüberwachten Lernalgorithmen.
+* Sie werden für das Clustering ungelabelter Daten eingesetzt.
+* **Sie gehören zu den überwachten Lernalgorithmen.**
+* **Sie werden zur Klassifizierung von Daten eingesetzt.**
+**5. Frage B - Frage 26** Wie kann KI dazu beitragen, den Ressourcenverbrauch in der Produktion zu reduzieren?
+* Durch die Erhöhung der Produktionsgeschwindigkeit
+* **Durch die Optimierung von Produktionsprozessen und die Reduzierung von Abfall**
+* **Durch die Analyse von Eingangsmaterialien und die Entwicklung nachhaltiger Materialien**
+* Durch die Erhöhung des Produktionsvolumens
+
+**6. Frage A - Frage 16** Welche Art von Datenverzerrung identifizierte Amazon in seinem experimentellen Softwaresystem zur Bewerberauswahl, und was war die Ursache?
+* Das System bevorzugte Kandidaten mit höherem Bildungsabschluss aufgrund einer Überrepräsentation von Bewerbenden mit Universitätsabschlüssen in den Trainingsdaten.
+* Das System zeigte eine Verzerrung zugunsten älterer Kandidaten, da in den Trainingsdaten vorwiegend Erfahrungen von älteren Mitarbeitenden enthalten waren.
+* Das System bevorzugte Kandidaten aus bestimmten geografischen Regionen, da die meisten Lebensläufe aus diesen Gebieten stammten.
+* **Das System benachteiligte weibliche Kandidaten, da die Trainingsdaten hauptsächlich aus Lebensläufen von Männern bestanden, was die männliche Dominanz in der Tech-Industrie widerspiegelt.**
+
+**7. Frage B - Frage 21** Welches Schachprogramm schlug im Jahr 1997 erstmals den amtierenden Schachweltmeister und markierte einen Meilenstein in der KI-Geschichte?
+* Watson
+* **Deep Blue**
+* AlphaGo
+* Nearest-Neighbor (NN)
+**8. Frage B - Frage 24** Welche Persönlichkeit wird mit der Entwicklung der KI in Verbindung gebracht?
+* **Alan Turing**
+* Leonardo da Vinci
+* Albert Einstein
+* Charles Darwin
+**9. Frage A - Frage 09** Welche Arten von Datenbanksystemen eignen sich besonders gut für die Verwaltung strukturierter bzw. unstrukturierter Daten?
+* **Relationale Datenbanken sind gut für strukturierte Daten, weil sie feste Tabellenstrukturen nutzen und standardisierte Abfragen ermöglichen.**
+* NoSQL-Datenbanken sind die beste Wahl für Finanzdaten, da sie flexibel auf Änderungen in Datenmodellen reagieren können.
+* **NoSQL-Datenbanken sind ideal für unstrukturierte Daten, da sie flexible Datenmodelle ohne feste Schemata bieten.**
+* Relationale Datenbanken sind besonders geeignet für Echtzeit-Streaming-Daten, weil sie große Datenmengen sofort analysieren können.
+
+**10. Frage B - Frage 23** Welche ethische Frage wird am Beispiel eines autonomen Fahrzeugs aufgeworfen?
+* Wie kann die Effizienz der KI im Straßenverkehr verbessert werden?
+* Welche technischen Verbesserungen sind für autonome Fahrzeuge erforderlich?
+* **Welche Entscheidung sollte ein Algorithmus in einer Notsituation treffen?**
+* Wie kann die Akzeptanz von autonomen Fahrzeugen gesteigert werden?
+**11. Frage A - Frage 42** Welche drahtlose Technologie wird hauptsächlich als Alternative zu Kabelverbindungen verwendet und hat eine Reichweite von bis zu 10 Metern?
+* 5G
+* WLAN
+* GPS
+* **Bluetooth**
+**12. Frage B - Frage 46** Was zählt zu den Herausforderungen im Bereich der intelligenten Fertigung?
+* **Die Robustheit der Datenerfassung und Algorithmen**
+* Dass Fabrikroboter möglichst menschlich aussehen.
+* **Die Verfügbarkeit großer Mengen hochwertiger Daten zum Trainieren von KI-Algorithmen**
+* **Es muss immer sichergestellt sein, dass ein Mensch jederzeit die Kontrolle über die produzierenden Maschinen übernehmen kann.**
+**13. Frage A - Frage 21** Was zeigt das Beispiel der ImageNet-Community in Bezug auf Big Data und KI?
+* Datensätze für die Gesichtserkennung haben sich seit 1997 nicht wesentlich vergrößert.
+* **Die Verfügbarkeit großer Datensätze wie ImageNet erleichtert das Testen und Validieren neuer KI-Algorithmen.**
+* **Der ImageNet-Datensatz beinhaltet fast 15 Millionen klassifizierte Bilder zur Unterstützung von KI-Forschung und -Entwicklung.**
+* ImageNet stellt keine signifikante Datenquelle für das Training neuronaler Netze dar.
+**14. Frage A - Frage 07** Wofür wird die Programmiersprache R hauptsächlich verwendet?
+* Webentwicklung
+* Spieleentwicklung
+* **Datenanalyse und statistische Berechnungen**
+* Systemadministration
+**15. Frage A - Frage 06** Was beschreibt die Grundgesamtheit im Kontext statistischer Analysen?
+* **Die Menge aller potenziellen Merkmalsträger, wie im Beispiel alle Menschen, an denen ein bestimmten Krankheit leiden.**
+* Eine Gruppe von Objekten, zu denen Daten erfasst werden.
+* Die Gesamtheit aller möglichen Ausprägungen eines Merkmals.
+* Eine spezifische Auswahl von Datenpunkten, die für eine Untersuchung verwendet wird.
+
+**16. Frage A - Frage 43** Welche Familie von kabelgebundenen Computer-Netzwerktechnologien wird häufig in lokalen Netzwerken, Metropolitan Area Networks und Wide Area Networks verwendet?
+* ARCNET
+* **Ethernet**
+* FDDI
+* Token Ring
+**17. Frage B - Frage 12** In welcher Weise trägt KI zur Verbesserung der industriellen Fertigung bei?
+* Der Einsatz von KI in der Fertigung beschränkt sich auf die automatisierte Qualitätskontrolle.
+* KI wird nur für einfache Aufgaben wie das Zählen von Produkten auf einem Fließband verwendet.
+* **KI ermöglicht es, den Fertigungsprozess zu beschleunigen und zu optimieren sowie Predictive Maintenance zu implementieren, um Ausfallzeiten zu minimieren.**
+* KI-Anwendungen in der Fertigung sind aufgrund mangelnder Präzision weit verbreitet.
+
+**18. Frage B - Frage 44** Welche Aussagen über Recurrent Neural Networks (RNN) sind korrekt?
+* **Sie können für Supervised und Unsupervised Learning, aber auch für Reinforcement Learning eingesetzt werden.**
+* **Eine Besonderheit besteht darin, dass frühere Zeitschritte durch Schleifen im Netzwerk berücksichtigt werden.**
+* **Durch das erneute Einspeisen früherer Daten als neues Input wird die zeitliche Dimension in Daten berücksichtigt.**
+* **Recurrent Neural Networks (RNN) gehören zu den klassischen Neuronalen Netzwerken (KNN).**
+
+**19. Frage A - Frage 47** Welche Aussage zur Echtzeit-Analytik (Real-time Analytics) und Batch Analytics ist korrekt?
+* Echtzeit-Analytik bezieht sich auf die Verarbeitung von Daten in großen Blöcken über einen bestimmten Zeitraum.
+* Echtzeit-Analytik liefert „nachträgliche“ Erkenntnisse und erfordert lange Verarbeitungszeiten.
+* Batch Analytics ermöglicht es Unternehmen, ohne Verzögerung zu reagieren.
+* **Echtzeit-Analytik ermöglicht es Benutzenden, Schlussfolgerungen sofort oder sehr schnell nach dem Eingang der Daten zu ziehen.**
+
+**20. Frage B - Frage 36** Welche Aufgabe kann mit dem SVM-Algorithmus durchgeführt werden?
+* Bildverarbeitung
+* Musikkomposition
+* **Klassifikation**
+* Spracherkennung
+**21. Frage A - Frage 32** Was sind Anwendungsfälle für datenbasierte Anwendungen in Behörden und Ministerien?
+* **Verbesserung der Effizienz der Beschaffung und Budgetierung**
+* **Verwaltung von öffentlichen Verkehrssystemen und Ausbau der Infrastruktur**
+* Steigerung der landwirtschaftlichen Produktion und Verbesserung des Bildungssystems
+* Überwachung der Umweltauswirkungen und Förderung der Tourismusindustrie
+
+**22. Frage B - Frage 25** Welche Wissenschaftler und Persönlichkeiten werden der Disziplin der KI zugeordnet?
+* **Marvin Minsky**
+* **Alan Turing**
+* **John McCarthy**
+* Noam Chomsky
+**23. Frage A - Frage 26** Welche Rolle spielt das Internet der Dinge (IoT) in der Datenerfassung und -analyse?
+* **IoT-Geräte ermöglichen die Analyse von Daten lokal oder über Cloud-Plattformen.**
+* Die Entwicklung des IoT hat zu einer Verringerung der Rechenkapazitäten auf Geräten geführt.
+* **Es wird erwartet, dass die Zahl der weltweit angeschlossenen IoT-Geräte weiter zunehmen wird.**
+* **IoT konzentriert sich auf das Sammeln von Daten, insbesondere in der Produktion und Verbraucherinformationen.**
+
+**24. Frage A - Frage 20** Welche Rolle spielen Daten in der Entwicklung und Anwendung von KI-Algorithmen?
+* Die Qualität der Daten hat keinen Einfluss auf das Ergebnis von KI-Algorithmen.
+* Die Größe der Datenmenge ist für die Entwicklung von KI-Algorithmen irrelevant.
+* **Der Zugang zu großen, klassifizierten Datensätzen ermöglicht eine effizientere Entwicklung und Bewertung von KI-Algorithmen.**
+* **Unvollständige oder fehlerhafte Daten führen zu schlechten Ergebnissen, unabhängig von der Qualität des Algorithmus.**
+
+**25. Frage A - Frage 05** Was sind Praxisszenarien von Machine-Learning-Anwendungen?
+* **Personalisierung von Diensten**
+* **Digitale Assistenten**
+* **Predictive Maintenance**
+* Herstellung von Gourmetkaffee
+**26. Frage B - Frage 38** Welche Aussagen über k-Nearest Neighbors sind korrekt?
+* **Es handelt sich um einen Klassifikations- oder Regressionsalgorithmus.**
+* **Es handelt sich um ein Verfahren aus dem Bereich Supervised Learning.**
+* **k-Nearest Neighbors wird auch als Lazy-Learning-Algorithmus bezeichnet.**
+* **Es handelt sich um einen Algorithmus, der zur Klassifikation eines Datenpunktes durch mathematische Abstandsberechnung seine k-nächsten Datenpunkte berechnet.**
+
+**27. Frage B - Frage 39** Welche Schritte sind Teil des k-NN-Algorithmus?
+* **Auswahl der Anzahl an k-nächsten Nachbarn**
+* **Berechnung der Distanz zwischen dem aktuellen und dem zu klassifizierenden Element**
+* **Entnehmen der ersten k-Elemente mit der geringsten Distanz**
+* **Sortieren aller Elemente in Reihenfolge in Abhängigkeit von der Distanz**
+**28. Frage A - Frage 14** Was sind die Hauptdatenschutzherausforderungen im Zusammenhang mit Big Data?
+* **Vergrößerung der Risiken für die Privatsphäre, Wiederverwendung von Daten, feingranulare Rückschlüsse auf Personen, weitreichende Datenschutzverletzungen**
+* Entwicklung neuer Algorithmen, Steigerung der Rechenleistung, Fokus auf KI-basierte Anwendungen, Optimierung von Datenbankarchitekturen
+* Verbesserung der Datenverschlüsselungstechniken, Verringerung des Datenvolumens, Einschränkung der Datenverfügbarkeit, Beschränkung der Datennutzung auf spezifische Sektoren
+* Erhöhung der Datenspeicherkapazität, Verbesserung der Datenverarbeitungsgeschwindigkeit, Verringerung der Kosten für Datenanalyse, Vereinfachung des Zugriffs auf Daten
+
+**29. Frage A - Frage 34** Welche Art von Daten werden von Netflix gesammelt, um das Zuschauererlebnis zu analysieren und zu optimieren?
+* **Standort des Nutzers (Postleitzahl)**
+* **Suchanfragen und abgegebene Bewertungen**
+* **Verwendetes Gerät (Smartphone, Tablet, PC, TV)**
+* **Verwendete Lautstärke**
+**30. Frage A - Frage 37** Welche Technologie wird im Handel und Logistikbereich eingesetzt, um die genaue Nachverfolgbarkeit von Containern, Paletten und Kisten sicherzustellen?
+* 5G
+* Bluetooth Low Energy (BLE)
+* **Radio Frequency Identification (RFID)**
+* Ultraschall-Technologie
+
+**31. Frage B - Frage 29** Wie kann die Integration von KI und fortschrittlicher Fertigung die Wertschöpfungskette in der Fertigung optimieren?
+* **KI erhöht die Reaktionsfähigkeit auf Kundenbedürfnisse.**
+* **KI ermöglicht die Individualisierung von Produkten auf einer völlig neuen Ebene.**
+* **KI verringert den Energieverbrauch, indem Produktionsmaschinen weniger oft gewartet werden müssen.**
+* **KI ermöglicht eine bessere Beurteilung von technischen und Qualitätsproblemen.**
+**32. Frage A - Frage 49** Welches Skalenniveau gibt an, dass statistische Merkmale eindeutig unterscheidbare Ausprägungen haben, aber nicht in eine bestimmte Reihenfolge gebracht werden können?
+* **Nominalskalen**
+* Ordinalskalen
+* Intervallskalen
+* Kardinalskalen
+**33. Frage B - Frage 09** Welche Aussage beschreibt Reinforcement Learning korrekt?
+* **Reinforcement Learning verwendet eine Belohnungsfunktion, um den Agenten zu trainieren, optimale Aktionen in seiner Umgebung zu wählen.**
+* **Reinforcement-Learning-Modelle können für komplexe Entscheidungsprozesse in unterschiedlichen Anwendungsbereichen eingesetzt werden, nicht nur in Spielen.**
+* Reinforcement Learning ist eine Form des Unsupervised Learning, die ausschließlich auf Datenclustering basiert.
+* Reinforcement Learning erfordert eine große Menge an gelabelten Daten für das Training.
+
+**34. Frage A - Frage 39** Wie hat Sasol seine Preisgestaltung durch Big Data verbessert?
+* Indem sie die Produktqualität reduzierten.
+* Durch die Anwendung von Rabatten auf alle Produkte.
+* **Durch eine datengetriebene Methode, die die individuelle Nachfragehistorie von Kundinnen und Kunden berücksichtigte.**
+* Indem sie jährliche Standarderhöhungen durchführten.
+**35. Frage A - Frage 13** Welche Rolle spielt Big Data in der Entwicklung und Anwendung von Künstlicher Intelligenz?
+* Big Data wird ausschließlich in der Finanzbranche eingesetzt.
+* Big Data hat keinen Einfluss auf die Entwicklung von KI-Technologien.
+* Big Data wird hauptsächlich zur Beschleunigung des Internets verwendet.
+* **Big Data ist entscheidend für die Speicherung und Analyse großer Datenmengen, die für KI-Anwendungen benötigt werden.**
+
+**36. Frage B - Frage 40** Wobei handelt es sich um typische Anwendungsfälle des k-NN-Algorithmus?
+* **Kaufempfehlung**
+* Chatbots
+* Bildergeneratoren
+* **Filmempfehlung**
+**37. Frage B - Frage 49** Was sind datenbezogene Herausforderungen bei der Anwendung von KI?
+* **Die Voreingenommenheiten von Menschen, deren Feedback zum Training verwendet wird, wirken sich auf die KI-Modelle aus.**
+* **In vielen Bereichen (z.B. Text und Bild) nicht genügend Daten für das Training vorhanden**
+* **Verzerrungen in den Daten können zu Vorurteilen in KI-Ergebnissen führen.**
+* **Die Qualität der Trainingsdaten beeinflusst die Leistung der KI.**
+
+**38. Frage B - Frage 06** Wie kann KI im Kampf gegen den Klimawandel eingesetzt werden?
+* Indem sie klimawandelbezogene Daten ignoriert.
+* **Indem sie Vorhersagen für wetterbedingte Ereignisse und die Erstellung von Frühwarnsystemen verbessert.**
+* **Durch intelligente Steuerung von Energieverbrauch und -versorgung, basierend auf verschiedenen Parametern.**
+* Indem sie den Klimawandel ignoriert und sich auf andere Technologiebereiche konzentriert.
+**39. Frage A - Frage 04** Welche Aussagen sind in Bezug auf KI korrekt?
+* **Der Überbegriff KI umfasst die Unterbereiche Machine Learning, Representation Learning und Deep Learning.**
+* Die zeitgenössischen KI-Systeme sind alle der starken KI zuzuordnen.
+* Machine Learning ist kein Teilbereich von KI.
+* **Es kann zwischen starker und schwacher KI unterschieden werden.**
+**40. Frage A - Frage 01** Welche Aussagen sind in Bezug auf statistische Merkmale korrekt?
+* **Statistische Merkmale lassen sich in Bezug auf das Skalenniveau unterscheiden.**
+* Statistische Merkmale können nur in fortgeschrittenen statistischen Analysen eingesetzt werden und sind für grundlegende Datenanalysen nicht relevant.
+* Statistische Merkmale werden hauptsächlich zur grafischen Darstellung von Daten verwendet und tragen wenig zur eigentlichen Datenanalyse bei.
+* **Statistische Merkmale werden oft zu Beginn einer Datenanalyse eingesetzt, um die Charakteristika des Datensatzes zu beleuchten.**
+
+**41. Frage B - Frage 11** Wie trägt KI zur Entwicklung und Verbesserung von Smart-Home-Ökosystemen bei?
+* KI-Anwendungen im Smart Home beschränken sich auf die Optimierung des Energieverbrauchs.
+* **KI wird mitunter für Steuerungs- und Überwachungsaufgaben in Smart-Home-Anwendungen verwendet.**
+* **KI ermöglicht die Integration und intelligente Steuerung verschiedener Geräte im Smart Home, was zur Entwicklung eines vollständigen Ökosystems führt.**
+* Smart-Home-Anwendungen mit KI dienen hauptsächlich der Unterhaltung und bieten keine funktionalen Vorteile.
+
+**42. Frage A - Frage 50** Was kennzeichnet ein neuronales Netz im Bereich der KI?
+* Die Verwendung ausschließlich linearer Algorithmen
+* Die Fähigkeit, ohne Daten zu lernen
+* Eine einzige Schicht aus Neuronen
+* **Die Nachahmung der Funktionsweise des menschlichen Gehirns**
+**43. Frage B - Frage 19** Welche Technologie hat die jüngsten Entwicklungen im Bereich der KI, wie Computer Vision und Natural Language Processing (NLP), ermöglicht?
+* Augmented Reality (AR)
+* **Künstliche neuronale Netze (KNNs)**
+* Blockchain-Technologie
+* 3D-Druck
+
+**44. Frage A - Frage 23** Welche Aussagen treffen auf die Nutzung und Verarbeitung von Big Data in Bezug auf Infrastruktur und Datenverfügbarkeit zu?
+* Der Wert einer Information nimmt mit der Zeit ab.
+* **Der Wert einer Information nimmt mit der Zeit ab, daher sind schnelle Berechnung und Bereitstellung wichtig.**
+* **Die Anpassung bestehender Algorithmen an neue Infrastrukturen war notwendig, um effiziente Big-Data-Kalkulationen zu ermöglichen.**
+* **Technische Verbesserungen in Datenbanken haben neue Big-Data-Kalkulationen ermöglicht.**
+
+**45. Frage B - Frage 13** Welche Hauptfunktion hat KI im medizinischen Bereich, insbesondere im Kontext bildgebender Verfahren?
+* **Unterstützung von Diagnoseprozessen**
+* Bereitstellung von Online-Schulungen für medizinisches Personal
+* Unterstützung bei der Terminplanung
+* Erstellung von Patientenakten
+**46. Frage A - Frage 24** In welcher Weise profitiert KI von der Nutzung von Edge-Computing?
+* Edge-Computing erhöht die Abhängigkeit von zentralisierten Cloud-Knoten für Datenanalysen.
+* **Edge-Computing ermöglicht es, nur Entscheidungen oder Alarme anstatt Rohdaten an Cloud-Server weiterzuleiten.**
+* Edge-Computing verringert die Notwendigkeit für schnelle Entscheidungsfindung in KI-Anwendungen.
+* Die Kommunikation zwischen Edge-Computing-Knoten ist für KI-Anwendungen nicht relevant.
+
+**47. Frage A - Frage 38** Was sind Robo-Advisor im Bereich der digitalen Vermögensverwaltung?
+* Kundenservice-Agenten für Finanzinstitute.
+* **Automatisierte Systeme, die Handlungsempfehlungen für Anlagestrategien basierend auf Algorithmen geben.**
+* Menschliche Finanzexperten, die kostengünstige Anlagestrategien entwickeln.
+* Roboter, die den physischen Handel mit Aktien und Anleihen durchführen.
+**48. Frage A - Frage 11** Wie wird Big Data im Gesundheitswesen eingesetzt?
+* Um die Kosten für Medikamente zu erhöhen
+* **Für die Früherkennung von Krankheiten und die Erstellung personalisierter Behandlungspläne**
+* Zur Verringerung der Anzahl der Ärztinnen und Ärzte in Krankenhäusern
+* Lediglich für administrative Aufgaben
+
+**49. Frage A - Frage 16** Welche Rolle spielt Big Data in Bezug auf Künstliche Intelligenz und Unternehmen?
+* Big Data ersetzt die Notwendigkeit von KI in modernen Unternehmen.
+* Unternehmen nutzen Big Data hauptsächlich für Social-Media-Aktivitäten.
+* **Die effektive Nutzung von Big Data kann Unternehmen Wettbewerbsvorteile sichern.**
+* **Big Data ist die Grundlage für die Entwicklung neuer KI-Anwendungen.**
+**50. Frage B - Frage 10** Welcher der folgenden Optionen gehört nicht zu den klassischen Algorithmen im Bereich Machine Learning?
+* Support Vector Machines (SVM)
+* Naive Bayes
+* **Transformer Netzwerk-Architektur**
+* k-Nearest Neighbors (k-NN)
+**51. Frage A - Frage 36** Welche Bezeichnung beschreibt ein Geschäftsmodell, bei dem Kundinnen und Kunden für die Nutzung eines Produkts bezahlen, anstatt das Produkt selbst zu kaufen?
+* Servitization
+* **Product-as-a-Service**
+* Equipment-as-a-Service
+* Pay-per-Click
+**52. Frage A - Frage 40** Welche Art von Daten werden in vielen Big-Data-Analysen verwendet, um Maschinenausfälle vorherzusagen?
+* Geografische Daten
+* **Sensordaten**
+* Unstrukturierte Daten
+* Strukturierte Daten
+
+**53. Frage A - Frage 35** Wie unterstützt Big Data die Filmproduzierenden bei der Verbesserung des Erfolgs von Filmen und TV-Serien?
+* Big Data bestimmt die Filmlänge und den Drehort.
+* Big Data analysiert die Schauspielerleistung nach der Veröffentlichung des Films.
+* Big Data hilft bei der Auswahl der passenden Filmgenres.
+* **Big Data ermöglicht die Vorhersage der Zuschauerpräferenzen und beeinflusst die Produktion und Vermarktung.**
+**54. Frage B - Frage 14** Welche der folgenden Aussagen beschreibt am besten eine der sozialen Herausforderungen bei der Anwendung von KI?
+* KI-Anwendungen können perspektivisch Entscheidungen ohne menschliche Intervention treffen.
+* KI ersetzt menschliche Arbeitsplätze in allen Branchen.
+* **Menschliche Fähigkeiten wie Kreativität und emotionale Intelligenz werden in der Zusammenarbeit mit KI noch wichtiger.**
+* KI wird hauptsächlich in der Automobilindustrie eingesetzt.
+**55. Frage B - Frage 32** Welche Anwendungen sind Beispiele für Reinforcement Learning?
+* **Computerspiele und selbstfahrende Autos**
+* Bildererkennung und Clustering
+* Supervised Learning und Deep Learning
+* **Produktionsablaufplanung und Steuerung in der industriellen Fertigung**
+
+**56. Frage A - Frage 46** Was ist die Definition von Infrastructure-as-a-Service (IaaS) im Bereich des Cloud-Computing?
+* IaaS beinhaltet die Bereitstellung von statisch vorkonfigurierten Betriebssystemen und Anwendungen in der Cloud.
+* **IaaS bietet grundlegende Rechenressourcen wie Verarbeitung und Speicher in der Cloud, wobei die Kundschaft die Kontrolle über Betriebssysteme und Anwendungen hat.**
+* IaaS ermöglicht die Nutzung von ausgewählter Software über die Cloud.
+* IaaS beinhaltet die Konfiguration der Hardware-Komponenten, welche die Grundlage für den Service darstellen.
+
+**57. Frage B - Frage 41** Welche Aussagen über den k-Means-Algorithmus sind korrekt?
+* Es handelt sich um einen Algorithmus des überwachten Lernens.
+* Die Hauptaufgabe des Algorithmus besteht darin, übereinstimmende Variablen zu finden und Daten danach zu gruppieren.
+* **Es handelt sich um einen Algorithmus des unüberwachten Lernens.**
+* **Es handelt sich um eine Methode zur Durchführung der Clusteranalyse.**
+**58. Frage B - Frage 04** Welche Rolle spielen ethische und regulatorische Überlegungen im Kontext der Künstlichen Intelligenz?
+* Sie sind nur für bestimmte Branchen wie das Gesundheitswesen relevant.
+* Sie sind irrelevant, da KI-Entwicklungen ausschließlich von technologischen Fortschritten abhängen.
+* **Sie sind entscheidend, um sicherzustellen, dass KI-Entwicklungen der Gesellschaft als Ganzes zugutekommen.**
+* Sie behindern die Entwicklung der KI und sollten minimiert werden.
+**59. Frage B - Frage 35** Was versteht man unter dem sogenannten Overfitting bei maschinellen Lernverfahren?
+* Die Berechnung der Gini Impurity
+* Das Finden der besten Partitionierung
+* **Die Überanpassung an den bestehenden Datensatz**
+* Eine zu starke Abweichung des Modells von den Trainingsdaten
+
+**60. Frage B - Frage 43** Welche Aussagen über Convolutional Neural Networks (CNNs) sind korrekt?
+* **CNNs nutzen sogenannte „Feature Maps“ oder auch Filter, die durch das Lernen bestimmte Merkmale der Daten repräsentieren.**
+* **Es handelt sich um eine spezielle Art von neuronalen Netzen, die insbesondere für Bilddaten gut geeignet sind.**
+* Im Bereich der Architekturen von CNNs schreitet die Forschung sehr langsam voran und steckt noch in den Kinderschuhen.
+* **Diese Netzwerke werden häufig im Kontext der Bildererkennung eingesetzt.**
+
+**61. Frage B - Frage 01** Was sind die wesentlichen Faktoren, die für eine erfolgreiche Implementierung von KI-Anwendungen in Unternehmen notwendig sind?
+* Eine starke Präsenz in sozialen Medien und der Einsatz von Cloud-Computing
+* **Eine ausreichend hohe Rechenleistung, die Verfügbarkeit von qualitativ hochwertigen Daten und eine passende Problemstellung**
+* Eine hohe Anzahl von Mitarbeitenden und umfangreiche Marketingstrategien
+* Eine langjährige Erfahrung in der IT-Branche und ein großes Kapital
+**62. Frage A - Frage 08** Was zählt zu den wesentlichen Merkmalen von verteilten Systemen im Kontext von Big Data?
+* Alle Systemkomponenten befinden sich auf demselben physischen Computer.
+* Verteilte Systeme sind ausschließlich für die Verarbeitung von strukturierten Daten geeignet.
+* **Verteilte Systeme bestehen aus Komponenten von vernetzten Computern, die durch Nachrichtenübertragung interagieren.**
+* Verteilte Systeme können keine Nachrichten zwischen ihren Komponenten austauschen.
+**63. Frage B - Frage 02** Wie hat sich der Markt für KI-Anwendungen seit seiner Einführung entwickelt und was wird bis 2025 erwartet?
+* **Der Markt hat sich stetig entwickelt und wird bis 2025 ein Marktvolumen von insgesamt 127 Milliarden USD erreichen.**
+* Der Markt hat anfangs stark zugenommen, aber es wird erwartet, dass er bis 2025 wieder schrumpft.
+* Es gab einen anfänglichen Anstieg, aber die Nachfrage hat seitdem nachgelassen.
+* Der Markt ist stabil geblieben und wird voraussichtlich dasselbe Niveau beibehalten.
+**64. Frage B - Frage 05** Wie trägt die Künstliche Intelligenz (KI) zur Optimierung von Produktionsprozessen und Ressourceneffizienz bei?
+* **Durch den Einsatz von KI in der Analyse und Optimierung des Verbrauchs von Eingangsmaterialien**
+* Durch die Fokussierung auf den Einsatz natürlicher Ressourcen ohne Berücksichtigung der Nachhaltigkeit
+* **Durch die Automatisierung von Produktionsprozessen und die Reduzierung von Abfällen**
+* Indem sie ausschließlich auf menschliche Arbeitskraft setzt.
+**65. Frage A - Frage 18** Was sind die Hauptmerkmale von Big Data laut der Definition und den vier V?
+* **Die Verarbeitung von Big Data beinhaltet Skalierbarkeit, Datenstreams, Heterogenität und Datenqualität.**
+* Big Data umfasst ausschließlich Daten aus sozialen Medien.
+* Big Data erfordert einfache Techniken und Technologien für die Verwaltung und Analyse.
+* **Zu den Hauptmerkmalen von Big Data gehören Volumen, Vielfalt, Geschwindigkeit und Wahrhaftigkeit.**
+
+**66. Frage B - Frage 48** Was ermöglicht ein intelligentes Stromnetz (Smart Grid)?
+* Verbindung von Smartphones mit dem Stromnetz für verbesserte Steuerung
+* **Bidirektionaler Stromfluss zwischen Anbietern und Verbrauchern**
+* **Integration von Informations- und Kommunikationstechnologien zur Echtzeitüberwachung und -steuerung des Stromnetzes**
+* Unidirektionaler Stromfluss vom Großkraftwerk zum Endkunden
+**67. Frage B - Frage 50** Durch welches Merkmal unterscheidet sich der BERT-Algorithmus im Wesentlichen von seinen Vorgängern?
+* Durch die Begrenzung auf unidirektionale Textverarbeitung.
+* Durch das Training mit ungelabelten Daten.
+* Durch die ausschließliche Verwendung von Supervised Learning.
+* **Durch die bidirektionale Betrachtung des Kontextes aller Wörter im Satz.**
+**68. Frage B - Frage 27** Wie kann KI dazu beitragen, den Kampf gegen den Klimawandel zu unterstützen?
+* Durch die Verringerung der landwirtschaftlichen Produktion
+* Durch die Erhöhung des CO2-Ausstoßes
+* **Durch die Verbesserung der Vorhersage von Wetterszenarien und Naturkatastrophen**
+* **Durch die Optimierung des Energieverbrauchs und der Nutzung natürlicher Ressourcen**
+
+**69. Frage A - Frage 12** Welche Bedeutung hat Big Data in der Unterhaltungsindustrie?
+* **Es hilft bei der Vorhersage des Erfolgs von Filmen und TV-Serien und bei der Content-Optimierung.**
+* Es wird ausschließlich für die Auswahl von Filmplakaten verwendet.
+* Es reduziert die Anzahl der verfügbaren Film und Serien.
+* Es wird verwendet, um die Dauer von Werbeunterbrechungen zu verlängern.
+**70. Frage B - Frage 42** Welche Aussagen über Artificial Neural Networks sind korrekt?
+* **Künstliche neuronale Netze haben verborgene Schichten denen Erklärbarkeit und Interpretierbarkeit eine Herausforderung darstellt**
+* **Solche Netze können im Rahmen des Unsupervised Learning, Supervised Learning als auch Reinforcement Learning zum Einsatz gebracht werden.**
+* **Es gibt eine Reihe an unterschiedlichen Architekturen und Netztopologien, die je nach Verwendungszweck ausgewählt werden**
+* **Nicht numerische Daten werden für das künstliche neuronale Netz in numerische Werte übersetzt, um in Form von Vektoren abgebildet zu werden**
+
+**71. Frage A - Frage 25** Welche Aussagen beschreiben die Vorteile von Cloud- und Edge-Computing für die Industriedigitalisierung?
+* **Agile Konnektivität und Echtzeitdienste sind Schlüsselanforderungen der Industriedigitalisierung, die durch Edge-Computing unterstützt werden.**
+* Daten, die durch Edge-Computing verarbeitet werden, können nicht lokal gesichert werden.
+* **Cloud- und Edge-Computing bieten kosteneffiziente, skalierbare Computing-Ressourcen.**
+* **Edge-Computing ermöglicht es, Maschinelles Lernen direkt auf den Geräten zu betreiben, was die Entscheidungsfindung beschleunigt.**
+
+**72. Frage B - Frage 16** Warum ist die Einbeziehung der Fachabteilungen in Analytics-Projekten hinsichtlich der Qualität von KI-Modellen wichtig?
+* Um die Kosten für das Projekt zu reduzieren.
+* **Um Scheinkorrelationen in den Analysen zu verhindern.**
+* Um die Datenbanken der Unternehmen zu überprüfen.
+* Um die Data Scientists in Unternehmen zu unterstützen.
+**73. Frage B - Frage 45** Wie erweitern soziale Medien die Erfahrung für Nutzende mit Hilfe von KI?
+* **Durch Anpassung von Lautstärke und Bildqualität basierend auf dem Betrachter**
+* **Durch das Vorschlagen von Inhalten, die eine fortlaufende Nutzung der Anwendung bewirken**
+* **Die Generierung von Empfehlungen für neue Kontakte, die man kennen könnte.**
+* **Durch die Analyse hochgeladener Medieninhalte auf Gesichter und Orte.**
+
+**74. Frage A - Frage 19** Welche Aspekte sind entscheidend für die Handhabung großer Datenmengen?
+* **Die Geschwindigkeit, mit der Daten analysiert werden.**
+* Die Anzahl der Nutzenden, die auf die Daten zugreifen.
+* **Die Vielfalt der Datenquellen und Datentypen.**
+* Die Farbe und das Design der Datenvisualisierung.
+**75. Frage A - Frage 31** Welche Rolle spielen Wearables wie Smartwatches in Bezug auf die Gesundheitsüberwachung?
+* Sie sind nur für Fitness-Begeisterte relevant und haben keinen Einfluss auf das Gesundheitswesen.
+* Sie sind in der Lage, Krankheiten selbst zu diagnostizieren und ersetzen den Arztbesuch.
+* **Sie können Auffälligkeiten erkennen, die auf das Auftreten von Krankheiten hinweisen, und bieten eine Datenquelle für Gesundheitsforschung.**
+* Sie dienen ausschließlich der Unterhaltung und haben keine medizinische Relevanz.
+
+**76. Frage A - Frage 41** Wie werden Daten bezeichnet, die leicht in Tabellen oder Datenbanken organisiert werden können und klare Beziehungen zwischen den Elementen haben?
+* Geografische Daten
+* Unstrukturierte Daten
+* Sensordaten
+* **Strukturierte Daten**
+**77. Frage B - Frage 20** Wann wurde der Begriff „Künstliche Intelligenz“ erstmals geprägt und wo fand die erste Konferenz über KI statt?
+* 1967, Stanford University
+* 2006, Harvard University
+* **1956, Dartmouth College**
+* 1986, University of California, Berkeley
+
+**78. Frage B - Frage 22** Die Vergangenheit wird gerne in eine Reihe von KI-Phasen, sogenannte „KI-Sommer“ und „KI-Winter“, eingeteilt. Wann begann in etwa der erste KI-Sommer?
+* **1950er Jahre**
+* 1900er Jahre
+* 1920er Jahre
+* 1980er Jahre
+**79. Frage A - Frage 27** Welche Aussagen treffen auf die zukünftige Entwicklung des IoT und dessen Einfluss auf KI und Edge-Computing zu?
+* Alle Daten von IoT-Geräten müssen zentralisiert übertragen und analysiert werden.
+* **Echtzeitverhalten von IoT-Systemen wird für zeitkritische Anwendungen wie das autonome Fahren immer wichtiger.**
+* **Einfache KI-Algorithmen, die lokal auf IoT-Geräten laufen, werden zunehmend wichtiger.**
+* **Die Rolle des Edge-Computing wird aufgrund der großen Datenmengen, die von IoT-Geräten erzeugt werden, wichtiger.**
+
+**80. Frage B - Frage 31** Welches Merkmal charakterisiert das „Unsupervised Learning“?
+* Es wird hauptsächlich in der Bildverarbeitung eingesetzt.
+* Es wird für die Klassifikation von Objekten verwendet.
+* **Es werden Muster in den Daten gesucht, ohne dazugehörige Output-Daten.**
+* Vorbestimmte Outputs sind vorhanden.
+**81. Frage B - Frage 07** Welche Auswirkungen hat die demografische Entwicklung auf die Notwendigkeit von KI?
+* **Die alternde Bevölkerung und der daraus resultierende Arbeitskräftemangel erfordern den Einsatz von KI, um Effizienz und Produktivität zu steigern.**
+* Sie hat keine Auswirkungen auf die Entwicklung oder den Einsatz von KI.
+* **KI kann helfen, die Herausforderungen einer alternden Bevölkerung in Bereichen wie Gesundheitswesen und Sozialdiensten zu bewältigen.**
+* Die Zunahme der Demografie führt zu einem Überangebot an Arbeitskräften, wodurch KI überflüssig wird.
+
+**82. Frage A - Frage 22** Wie hat die Entwicklung der Infrastruktur die Handhabung von Big Data beeinflusst?
+* **In-Memory-Computing hat zu einer wesentlich besseren Performance von Datenbanken geführt.**
+* Ältere Datenbanktechnologien sind für Big-Data-Anwendungen ausreichend effizient.
+* **Die Interpretierbarkeit von Daten und die Geschwindigkeit ihrer Verfügbarkeit sind entscheidend für ihren Wert.**
+* **Cloud-Computing hat eine wichtige Rolle bei der Bereitstellung von Infrastruktur für Big Data gespielt.**
+
+**83. Frage A - Frage 33** Welche Funktionen erfüllt Predictive Policing im Bereich der Verbrechensbekämpfung?
+* **Vorhersage künftiger Zeitfenster mit hoher Kriminalitätswahrscheinlichkeit**
+* **Prognose zukünftiger kriminalitätsintensiver Gebiete**
+* Analyse historischer Daten zur Generierung von Erkenntnissen zu vergangenen Verbrechen
+* Automatisierte Erstellung von Gerichtsberichten auf Basis abgeschlossener Fälle
+**84. Frage A - Frage 02** Welche Skalenniveaus lassen sich unterscheiden?
+* **Intervallskalen**
+* **Nominalskalen**
+* **Kardinalskalen**
+* **Ordinalskalen**
+
+**85. Frage B - Frage 33** Was ist Anomaly Detection?
+* Die Analyse von syntaktischen Strukturen in natürlicher Sprache
+* Die Identifizierung von normalen Elementen in Datensätzen
+* Das Erstellen von sinnvollen Ausdrücken und Sätzen in natürlicher Sprache
+* **Die Suche nach Änderungen im normalen Verhalten eines Systems**
+**86. Frage A - Frage 45** Was sind einige grundlegende Merkmale von Apache Hadoop zur Verarbeitung und Speicherung großer Datenmengen?
+* Apache Hadoop ist ein Framework, das speziell für die Verarbeitung von Echtzeit-Datenströmen entwickelt wurde.
+* Apache Hadoop speichert alle Daten in einem zentralen Server, um schnellen Zugriff zu ermöglichen.
+* **Apache Hadoop ermöglicht die verteilte Speicherung von Daten über viele Computer hinweg und verarbeitet Daten parallel.**
+* Apache Hadoop ist hauptsächlich auf die Analyse kleinerer Datenmengen ausgelegt und wird für einfache lokale Datenbanken verwendet.
+
+**87. Frage A - Frage 17** Was beschreibt die Beziehung zwischen Datenaufkommen und Unternehmensprozessen?
+* Daten, die für Unternehmensentscheidungen wichtig sind, entstehen nur in sozialen Medien.
+* **Unternehmen nutzen zunehmend Daten, um ihre Geschäftsprozesse effizienter zu gestalten.**
+* **Digitalisierungskampagnen in Unternehmen führen zu einem Anstieg der Datenmenge.**
+* Die Zunahme von Daten hat keinen Einfluss auf die Geschäftsprozesse von Unternehmen.
+**88. Frage B - Frage 28** Welche Möglichkeiten bieten sich den ärmsten Ländern der Welt durch die Zusammenarbeit von KI mit anderen Technologien, um nachhaltige Entwicklungsziele zu erreichen?
+* Die KI kann die Produktion von Luxusgütern in diesen Ländern steigern.
+* **Die KI kann dazu beitragen, intelligente Landwirtschaft zu fördern und den Welthunger zu bekämpfen.**
+* **Die KI kann zur Verbesserung der Gesundheitsversorgung beitragen und den Zugang zu medizinischer Versorgung in diesen Ländern erleichtern.**
+* Die KI kann die Entwicklung von Atomwaffen in diesen Ländern unterstützen.
+**89. Frage B - Frage 34** Welches Merkmal unterscheidet BERT von früheren NLP-Modellen?
+* BERT verwendet nur vorherige Wörter zur Vorhersage.
+* BERT ist ein regelbasiertes Modell.
+* BERT kann ungelabelte Trainingsdaten verwenden.
+* **BERT ist eines der ersten Modelle, welches alle Vorgänger und Nachfolger betrachtet.**
+
+**90. Frage B - Frage 30** Welche der folgenden Optionen beschreiben Hauptkategorien des Maschinellen Lernens?
+* Echo Learning
+* **Reinforcement Learning**
+* **Unsupervised Learning**
+* **Supervised Learning**
+**91. Frage B - Frage 03** Welche Faktoren haben zur aktuellen Renaissance der Künstlichen Intelligenz beigetragen?
+* Rückgang der Popularität traditioneller Programmiersprachen und Verlagerung auf manuelle Datenanalyse
+* Zunehmende Regulierung und Beschränkungen in der KI-Forschung
+* **Zunahme der Rechenleistung, große Datenmengen und Verbesserungen in maschinellen Lernmethoden**
+* Steigende Kosten für IT-Infrastruktur und rückläufige Forschungsinvestitionen
+
+**92. Frage B - Frage 17** Was sind die vier Vs von Big Data?
+* **Volume, Variety, Velocity, Veracity**
+* Volume, Variety, Velocity, Validation
+* Volume, Value, Velocity, Variability
+* Variety, Value, Velocity, Viability
+**93. Frage A - Frage 29** In welcher Weise nutzen Unternehmen Social Media zur Verbesserung ihrer Geschäftsprozesse?
+* **Sentimentanalysen auf Social-Media-Plattformen bieten Echtzeitblicke in die Kundenzufriedenheit.**
+* Unternehmen nutzen Social Media, um generelle Trends zu erkennen, aber nicht für spezifische Produktanalysen.
+* **Social Media ermöglicht eine detaillierte Segmentierung der Kundenbasis und eine gezielte Ansprache.**
+* **Die Kombination von Daten verschiedener Social-Media-Plattformen kann zu effektiveren Marketingstrategien führen.**
+
+**94. Frage A - Frage 44** Was versteht man unter verteilten Systemen in der Informatik und welche Merkmale können für solche Systeme genannt werden?
+* Verteilte Systeme sind Systeme, bei denen alle Komponenten der Reihe nach Daten verarbeiten.
+* **Verteilte Systeme, bei denen Rechenoperationen in getrennten physischen Systemen stattfinden, die über ein Netzwerk miteinander kommunizieren.**
+* **Verteilte Systeme ermöglichen eine höhere Fehlertoleranz, da Ausfälle einzelner Komponenten nicht zum Ausfall des gesamten Systems führen müssen.**
+* Verteilte Systeme sind physische Systeme, die nicht miteinander kommunizieren.
+
+**95. Frage A - Frage 03** Welche Aussagen sind in Bezug auf Korrelationen korrekt?
+* **Manchmal können dritte, nicht erfasste Variablen die Ursache für Korrelationen zweier Variablen sein.**
+* **Korrelationen werden in der Praxis über Korrelationskoeffizienten angegeben, die ein Maß für die Stärke eines Zusammenhangs zwischen zwei statistischen Merkmalen darstellen.**
+* Eine Korrelation beweist immer, dass eine Kausalität besteht.
+* **Eine starke Korrelation kann ein Hinweis auf eine Kausalität sein.**
+**96. Frage A - Frage 10** Was ist ein Schlüsselelement des Edge-Computing im Kontext von KI und IoT?
+* **Die Verarbeitung und Analyse von Daten direkt am Ort ihrer Entstehung**
+* Die Fähigkeit, große Datenmengen an eine zentrale Cloud-Plattform zur Verarbeitung zu senden
+* Die ausschließliche Speicherung von Daten in physischen Datenträgern am Edge-Gerät
+* Die Nutzung von Edge-Computing zur Unterhaltung und Spieleentwicklung
+**97. Frage A - Frage 30** Welche Faktoren sind maßgeblich für die Revolutionierung der Gesundheitsbranche in den kommenden Jahren?
+* Die verstärkte Nutzung von Social Media im Gesundheitswesen
+* Die steigende Nachfrage nach traditionellen medizinischen Behandlungen
+* **Die Verfügbarkeit von digitalen Daten und Fortschritte in der Telemedizin**
+* Die verstärkte Nutzung von Fertigungstechnologien und Medien im Gesundheitswesen
+
+**98. Frage A - Frage 28** Wie beeinflusst Social Media die Anwendung und Effizienz von Big-Data-Analysen?
+* **Social Media ermöglicht es, individuumsbezogene Details in die Analyse einzubeziehen, was zu besseren Prognosen führt.**
+* **Die Nutzung von Social-Media-Daten ermöglicht eine individuellere Kundenansprache und verbessertes Targeting.**
+* Social-Media-Analysen haben keinen Einfluss auf die Identifizierung von Nachfragetreibern.
+* **Durch Social Media gewonnene Daten ermöglichen genauere Vorhersagen und Prognosen im Einzelhandel.**
+
+**99. Frage B - Frage 47** Was sind die Hauptzwecke von KI im Bereich der intelligenten Verkehrsmittel?
+* Unterhaltung der Passagiere
+* **Verkehrsflussanalyse und Staukontrolle**
+* Förderung von Fernreisen
+* **Routenoptimierung und Emissionsreduzierung**
+**100. Frage 47 (Abschlussprüfung)** Welche Aussagen im Zusammenhang mit kollaborativen Robotern sind richtig?
+* **Sie werden auch Cobots genannt.**
+* Solche Roboter sind ohne komplexe Sicherheitsrichtlinien einsetzbar.
+* Solche Roboter werden beim autonomen Fahren eingesetzt.
+* **Die Sicherstellung, dass Menschen in der Zusammenarbeit nicht verletzt werden, ist eine wichtige Voraussetzung des Einsatzes.**
+
+**101. Frage 39 (Abschlussprüfung)** Für welchen Anwendungsfall sind tiefe Neuronale Netze prädestiniert?
+* Mathematische und logische Operationen
+* **Mustererkennung**
+* Empathiesimulation
+* Sortierverfahren
+**102. Frage 48 (Abschlussprüfung)** Welche Aussagen im Zusammenhang mit KI im Verkehrsmanagement sind richtig?
+* **Die automatische Prüfung der Verletzung von Verkehrsregeln wirft ethische Fragestellungen auf.**
+* Durch autonomes Fahren wird die Unfallquote prognostiziert auf nahezu 0 Prozent fallen.
+* Die klassische Schaltung von Ampeln bietet einen deutlichen Vorteil gegenüber KI-gesteuerten Ampelsystemen.
+* **Durch Analyse von Verkehrssituationen kann diese deutlich verbessert werden.**
+
+**103. Frage 21 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf Machine-Learning-Verfahren korrekt?
+* Es kann unter anderem in strukturiertes und unstrukturiertes Maschinelles Lernen unterschieden werden.
+* **Verstärkendes Lernen nennt sich Reinforcement Learning.**
+* **Eine beliebte Methode für Lernverfahren ist das Clustering.**
+* **Teilüberwachtes Lernen ist ein mögliches Verfahren im Rahmen des Maschinellen Lernens.**
+**104. Frage 16 (Abschlussprüfung)** Welche Aussagen bezüglich Datenbanken sind korrekt?
+* Um Daten in Datenbanken zu speichern, müssen unstrukturierte Daten in strukturierte transformiert werden.
+* **Als Herausforderung in Bezug auf Datenbanken gilt es, das hohe Wachstum der Datenmenge zu bewältigen.**
+* **Bei Datenbanken kann es zu Performance-Problemen kommen.**
+* **Ein Enterprise Data Warehouse wird vor allem im Bereich des Business Intelligence genutzt.**
+**105. Frage 34 (Abschlussprüfung)** Was trifft auf LSTM-Netzwerke zu?
+* Sie verfügen über ein Langzeitspeicherelement im Neuronalen Netzwerk, das abgerufen werden kann.
+* **Kombinieren den aktuellen Eingabewert mit dem vorherigen Zustand und dem Speicher einer Zelle, um langfristige Abhängigkeiten in Daten zu identifizieren.**
+* LSTM-Netzwerke sind darauf spezialisiert, ausschließlich mit statischen, zeitunabhängigen Daten zu arbeiten.
+* Werden auch als bidirektionale Recurrent Neural Networks bezeichnet.
+
+**106. Frage 02 (Abschlussprüfung)** Welche Aussagen sind generell in Bezug auf Big Data richtig?
+* **Für einige Anwendungen ist die Geschwindigkeit der Datengenerierung von Bedeutung.**
+* Der Einsatz großer Datenmengen ist relevanter als der Einsatz richtiger Datenquellen.
+* Die nutzbaren Daten sind auf Sensordaten beschränkt.
+* **Die Datenqualität ist ein wichtiger Faktor.**
+**107. Frage 23 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf überwachte Lernverfahren korrekt?
+* **Überwachte Lernverfahren verarbeiten während der Lernphase eine große Zahl an Paaren aus Eingabewerten und korrekten Ausgabewerten.**
+* **Eine häufige Aufgabe für überwachtes Lernen ist die Klassifizierung von Texten oder Bildern.**
+* Methoden des unüberwachten Lernens können für Anwendungsfälle überwachten Lernens eingesetzt werden.
+* Für überwachte Lernverfahren können nur strukturierte Daten verwendet werden.
+
+**108. Frage 15 (Abschlussprüfung)** Welche Aussagen bezüglich Sensordaten sind korrekt?
+* **Daten eines Beschleunigungssensors sind ein Beispiel für Sensordaten.**
+* Sensordaten sind immer auch strukturierte Daten.
+* **Sensordaten sind die Eingabedaten für ein Gerät.**
+* **Sensoren können eine Vielzahl an Zuständen eines physischen Systems mittels Sensorik erfassen.**
+**109. Frage 49 (Abschlussprüfung)** Welche Schritte sind im k-Means-Algorithmus vorhanden?
+* **Zufällige Bestimmung der k-Mittelpunkte**
+* Anpassung der trainierten Gewichten
+* **Neue Berechnung der Mittelpunkte aller Cluster**
+* Speicherung von Informationen in Gated Cells
+
+**110. Frage 31 (Abschlussprüfung)** Welche Arten von Anomalien lassen sich unterscheiden?
+* **Punktuelle Anomalien**
+* **Kontextuelle Anomalien**
+* Totale Anomalien
+* Kumulative Anomalien
+**111. Frage 43 (Abschlussprüfung)** Welche ethische Herausforderung, die beispielsweise auf der Webseite zur Moral Machine thematisiert wird, stellt eine wichtige moralische Frage bei der Programmierung von Entscheidungsalgorithmen für autonome Fahrzeuge dar?
+* Die Frage, ob autonome Fahrzeuge ohne menschliche Aufsicht fahren sollten
+* Das Problem der Haftung bei Unfällen mit autonomen Fahrzeugen
+* Die Entscheidung, ob Fahrdaten an Behörden weitergegeben werden dürfen
+* **Die Wahl zwischen verschiedenen Unfallszenarien, wenn ein Unfall unvermeidbar ist.**
+
+**112. Frage 14 (Abschlussprüfung)** Welche Aussagen bezüglich strukturierter Daten sind korrekt?
+* Satellitenbilder sind ein Beispiel für strukturierte Daten.
+* Strukturierte Daten haben kein vordefiniertes Datenmodell.
+* **Strukturierte Daten werden auch relationale Daten genannt.**
+* **Strukturierte Daten lassen sich leicht in herkömmlichen, relationalen Datenbanken speichern.**
+**113. Frage 35 (Abschlussprüfung)** Welcher Aspekt spielt bei der Durchführung von Predictive Maintenance eine wichtige Rolle?
+* Die Ausbreitung von Fehlern aufgrund defekter Hardware wird vorab in mathematischen Modellen festgehalten.
+* Korrelationsanalysen können dabei helfen, Maschinenausfälle mit wirtschaftlichen Kennzahlen in Verbindung zu bringen.
+* Hardware-Versagen lässt sich kaum anhand von sensorisch erfassten Daten erkennen.
+* **Ein potenzieller Defekt kündigt sich in den meisten Fällen durch eine Verschlechterung des Betriebszustandes an.**
+**114. Frage 27 (Abschlussprüfung)** Wie wird der Bereich der maschinellen Bildverarbeitung auch genannt?
+* Natural Language Processing
+* **Computer Vision**
+* Anomalieerkennung
+* Deep Learning
+**115. Frage 29 (Abschlussprüfung)** Welche Hardware-Komponenten werden aufgrund ihrer hohen Leistung zum Training von KI-Systemen eingesetzt?
+* **GPU (Graphics Processing Unit)**
+* **ASIC (Application-Specific Integrated Circuit)**
+* HDD (Hard Disk Drive)
+* **FPGA (Field Programmable Gate Array)**
+**116. Frage 32 (Abschlussprüfung)** In welche Gruppen lassen sich Lernverfahren unterscheiden?
+* **Lazy-Lernverfahren**
+* Idle-Lernverfahren
+* **Nicht-parametrierte Lernverfahren**
+* Medium-Lernverfahren
+
+**117. Frage 28 (Abschlussprüfung)** Wer prägte den Begriff der Künstlichen Intelligenz (Artificial Intelligence)?
+* Alan Turing
+* Max Frisch
+* Marvin Minsky
+* **John McCarthy**
+**118. Frage 04 (Abschlussprüfung)** Welche Aussagen in Bezug auf IoT und Big Data sind richtig?
+* **IoT-Anwendungen ermöglichen die Erfassung von leistungs- und umweltbezogenen Daten mit Hilfe von Sensoren, die an Geräten angebracht sind.**
+* **IoT wäre ohne Big Data (und umgekehrt) nicht in der heutigen Dimension denkbar.**
+* IoT ist eine Untergattung von Big Data.
+* **In Zukunft wird die IoT-Datenmenge, die in KI-Anwendungen verwendet werden kann, weiter zunehmen und damit die Leistung von Algorithmen verbessern.**
+
+**119. Frage A - Frage 15 (Abschlussprüfung)** Welche Art von Datenverzerrung identifizierte Amazon in seinem experimentellen Softwaresystem zur Bewerberauswahl, und was war die Ursache?
+* Das System zeigte eine Verzerrung zugunsten älterer Kandidaten, da in den Trainingsdaten vorwiegend Erfahrungen von älteren Mitarbeitenden enthalten waren.
+* Das System bevorzugte Kandidaten aus bestimmten geografischen Regionen, da die meisten Lebensläufe aus diesen Gebieten stammten.
+* **Das System benachteiligte weibliche Kandidaten, da die Trainingsdaten hauptsächlich aus Lebensläufen von Männern bestanden, was die männliche Dominanz in der Tech-Industrie widerspiegelt.**
+* Das System bevorzugte Kandidaten mit höherem Bildungsabschluss aufgrund einer Überrepräsentation von Bewerbenden mit Universitätsabschlüssen in den Trainingsdaten.
+
+**120. Frage 44 (Abschlussprüfung)** Wie können potenzielle Qualitätsprobleme mit Trainingsdaten vermieden werden?
+* **Mögliche Verzerrungen in den Daten müssen analysiert und korrigiert werden.**
+* **Bei der Auswahl der Daten ist auf eine Ausgewogenheit und Neutralität zu achten.**
+* Durch Datenaufbereitung und -harmonisierung werden Qualitätsprobleme während des Trainings automatisch korrigiert.
+* Die Verwendung von mehr Daten nivelliert mögliche Qualitätsprobleme automatisch.
+**121. Frage 20 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf Machine Learning korrekt?
+* **Machine Learning gilt als Unterkategorie zur Künstlichen Intelligenz.**
+* **Big-Data-Analysen basieren u. a. auf Methoden des Machine Learning.**
+* Eine Kategorie Maschinellen Lernens ist das strukturierte Lernen.
+* Künstliche Intelligenz gilt als Unterkategorie zu Big Data.
+**122. Frage 22 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf neuronale Netze korrekt?
+* Neuronale Netze bilden die Basis von Datenbanksystemen.
+* **Neuronale Netze können aus mehrschichtigen Netzen bestehen.**
+* Die Ausgabeschicht besteht immer aus einem Neuron.
+* Neuronale Netze sind der Struktur von Atomen nachempfunden.
+
+**123. Frage 17 (Abschlussprüfung)** Ein drahtloses Kommunikationssystem...
+* **ist im Falle eines WLAN ein System innerhalb eines begrenzten Gebietes, über das Geräte in diesem Bereich kommunizieren können.**
+* ist immer Grundlage des Internet of Things.
+* **ist z.B. Bluetooth oder NFC.**
+* **ist ein drahtloses Computernetzwerk, das mindestens 4 oder mehr Geräte über drahtlose Kommunikation miteinander verbindet.**
+
+**124. Frage 24 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf problematische Aspekte im Bereich Big Data korrekt?
+* **Big-Data-Analysen können zu Diskriminierung bestimmter Bevölkerungsgruppen führen.**
+* Big-Data unterstehen bereits seit mehreren Jahrzehnten strengen Gesetzen und staatlichen Regularien in der Anwendung.
+* **Big Data verstärkt seit Jahren bekannte Risiken, die aus Sammlung und Verknüpfung von Daten resultieren.**
+* **Fehlende Transparenz in der Verwendung der Daten von Konsumierenden ist ein großes Problem im Bereich Big Data.**
+
+**125. Frage 50 (Abschlussprüfung)** Was sind Schlüsselaspekte für die erfolgreiche Implementierung und Nutzung von KI-Systemen in der Produktion?
+* Fokus auf ausschließlicher Nutzung interner Datenquellen ohne Berücksichtigung externer Daten.
+* Unabhängige Entwicklung von KI-Algorithmen durch einzelne Unternehmen, ohne Austausch von Expertenwissen und Daten.
+* **Vertrauen und Sicherstellung der Datenqualität durch Zusammenarbeit zwischen Herstellenden und Anwendenden sowie Einsatz von Zertifizierungstechnologien.**
+* Verzicht auf Sicherheitsmaßnahmen beim Datenaustausch, da KI-Systeme selbstständig Sicherheitslücken erkennen und schließen können.
+
+**126. Frage 05 (Abschlussprüfung)** Welche Aussagen in Bezug auf Social Media und Big Data sind richtig?
+* **Durch Social-Media-Daten lassen sich Kundensegmente zielgerichteter ansprechen.**
+* Für Big Data spielen Social-Media-Anwendungen eine untergeordnete Rolle.
+* Social-Media-Daten haben keinen nennenswerten, nachweisbaren Vorteil gegenüber anderen Daten in Hinblick auf Kundensegmentierung.
+* Das Problem bei Daten aus Social-Media-Anwendungen ist die nicht-individiumsbezogene Ausgestaltung dieser Daten.
+
+**127. Frage 19 (Abschlussprüfung)** Welche Aussagen in Bezug auf Cloud-Computing korrekt?
+* **Typischerweise beinhaltet Infrastructure as a Service die umfassende individuelle Konfiguration von Cloud-Anwendungen.**
+* Cloud-Computing basiert auf dem k-Means-Algorithmus.
+* **Platform as a Service ist eine Kategorie von Cloud-Computing-Diensten.**
+* Cloud-Computing ist die technologisch nächste Stufe nach Big Data.
+
+**128. Frage 12 (Abschlussprüfung)** Was versteht man unter „Digital Natives“?
+* Junge Personen unter 30, die keine Erfahrung in digitalen Anwendungen haben.
+* **Die Personen, die mit Smartphones und anderen digitalen Geräten aufgewachsen sind.**
+* Personen über 60, die erste Erfahrungen mit digitalen Anwendungen sammeln.
+* Personen, für die digitale Anwendungen allgemein Neuland sind.
+
+**129. Frage 25 (Abschlussprüfung)** Welche Aussagen in Bezug auf Datentypen sind korrekt?
+* Zu Inhalts-, Nutz- und Nutzungsdaten zählen Sensordaten aus Maschinen.
+* Metadaten bezeichnet unstrukturierte Daten.
+* **Das in einer E-Mail Geschriebene zählt als Inhaltsdaten.**
+* **Metadaten bezeichnen Daten über Daten, welche die primären Daten um weitere Informationen ergänzen.**
+
+**130. Frage 26 (Abschlussprüfung)** Welche Aussagen in Bezug auf Datenschutz sind korrekt?
+* Die DSGVO regelt auch die ethisch korrekte Anwendung von Verfahren des Maschinellen Lernens.
+* **Viele Big-Data-Verfahren beruhen auf datenschutzrechtlich problematischen Verknüpfungen von Daten.**
+* Die DSGVO findet im Big-Data-Bereich keine Anwendung.
+* **Die DSGVO stellt klar, dass das Ergebnis der Datenverarbeitung zu statistischen Zwecken keine personenbezogenen Daten enthalten darf.**
+
+**131. Frage 11 (Abschlussprüfung)** Welche Aussagen in Bezug auf Big Data im Finanz-Bereich sind korrekt?
+* Ein Robo-Advisor ist ein auf linearer Regression aufbauender Anlagealgorithmus.
+* **Mittels Robo-Advisor lassen sich verschiedene Anlagestrategien automatisieren, jedoch mit Einschränkungen bei hochkomplexen Strategien oder sehr speziellen Anlageinstrumenten.**
+* Aufgrund der Schnelligkeit von Transaktionen spielt Big Data im Finanz-Bereich keine entscheidende Rolle.
+* **Big Data findet Anwendung in der Erkennung von Betrug und Geldwäsche.**
+
+**132. Frage 45 (Abschlussprüfung)** Wie lässt sich generative KI allgemein beschreiben?
+* **Generative KI „erschafft“, statt „zu diskriminieren“.**
+* ChatGPT ist der diskriminativen KI zuzuordnen.
+* TikTok gilt als Auslöser des Hypes rund um generative KI.
+* ChatGPT gilt als Auslöser des Hypes rund um generative KI.
+
+**133. Frage 33 (Abschlussprüfung)** Wozu wird generative KI verwendet?
+* **Zum Erstellen von Bildern im Stile berühmter Künstler**
+* Für autonomes Fahren
+* **Zum Erstellen von Musikstücken**
+* **Zum Erstellen von Marketing-Content**
+
+**134. Frage 09 (Abschlussprüfung)** Welche Aussagen in Bezug auf Big Data im öffentlichen Sektor sind richtig?
+* Quantitative Ansätze zur Verbrechensbekämpfung existieren erst seit Big Data.
+* **Die Verbrechensbekämpfung ist ein Feld, in welchem Big-Data-Analysen genutzt werden können.**
+* Der Polizei stehen bei Predictive Policing nicht mehr Daten zur Verfügung als vor 20 Jahren.
+* **Big-Data-Analysen können helfen, Steuerbetrug zu erkennen.**
+
+**135. Frage 06 (Abschlussprüfung)** Welche Elemente gibt es im Informationswert in Bezug zur Zeit?
+* Handlungsverweigerung
+* **Eintritt eines Ereignisses**
+* Innovationstrigger
+* **Erkennung und Analyse**
+
+**136. Frage 10 (Abschlussprüfung)** Welche Aussagen in Bezug auf Internet of Things (IoT) sind richtig?
+* **Als ein wichtiges Einsatzgebiet des IoT gilt die vorausschauende Wartung industrieller Maschinen.**
+* IoT-Anwendungen liegen in fast allen Fällen analoge Sensordaten zugrunde.
+* Das IoT wurde als Gegengewicht zur Industrie 4.0 entwickelt.
+* **IoT findet auch Anwendung in logistischen Prozessen.**
+
+**137. Frage 42 (Abschlussprüfung)** Was wird unter der „Fusion von Sensordaten“ verstanden?
+* Klassifizierung von Sensorwerten mit im Internet verfügbaren Daten wie Wetterinformationen
+* Die Abbildung von Sensorwerten einer Eingabemenge auf eine Ausgabemenge
+* **Die gemeinsame Auswertung von Daten aus unterschiedlichen Sensoren, bspw. Kamerabildern und Radaraufnahmen**
+* Zusammenbringen verschiedener Zeitreihen von Messwerten eines Sensors
+
+**138. Frage 46 (Abschlussprüfung)** Worauf beruht der Erfolg von ChatGPT?
+* **Aufgrund eines kostenlosen Basismodells**
+* Der breiten Etablierung als Anwendung in Apple-Produkten
+* **Einer einfachen Bedienbarkeit**
+* **Der Freisetzung kreativer Möglichkeiten**
+
+**139. Frage 37 (Abschlussprüfung)** Welche Beispiele für Künstliche Intelligenz finden/findet bereits Anwendung?
+* **Autonomes Fahren**
+* **Brustkrebsdiagnose**
+* Traumanalyse
+* **Vorhersage von Maschinenausfällen**
+
+**140. Frage 36 (Abschlussprüfung)** Welcher Vorteile ergeben sich durch den Einsatz von Cloud-basierten Infrastrukturen für KI-Anwendungen?
+* **Nutzbarkeit von Cloud-Native API (Application Programming Interface) zur Implementierung konsistenter Schnittstellen**
+* Eliminierung von Sicherheitsrisiken bei der Verarbeitung sensibler Trainingsdaten
+* **Einfache Skalierbarkeit und hohe Zuverlässigkeit von Ressourcen**
+* **Zugang zu KI-optimierter Spezialhardware (TPUs, FPGAs, ASICs) ohne Anschaffungskosten**
+
+**141. Frage 30 (Abschlussprüfung)** Welche Rolle spielen Cloud-Anbieter für die Verbreitung von KI?
+* Internet-of-Things-Anwendungen bewirken eine Zentralisierung von Rechenleistung und KI-Systemen.
+* **Sie bieten einen einfachen Zugang zu Ressourcen für KI-Anwendungen.**
+* **Aufgrund teilweise limitierender Bandbreite werden zentrale Cloud-Ressourcen um außenstehende Edge-Ressourcen ergänzt, um Rechenlast zu verteilen.**
+* Zunehmende Zentralisierung von Cloud-Systemen ist ein Schlüsselfaktor für gesteigerte KI-Leistung.
+
+**142. Frage 18 (Abschlussprüfung)** Welche Aussagen sind in Bezug auf Hadoop korrekt?
+* **Es gibt eine Vielzahl an Adaptionen von Hadoop, bspw. von bekannten Tech-Unternehmen wie Google oder Amazon.**
+* **Das Hadoop Distributed File System (HDFS) ist ein verteiltes Dateisystem, das große Datenmengen speichert und über mehrere Knoten verteilt, um hohe Ausfallsicherheit und Skalierbarkeit zu gewährleisten.**
+* Apache Hadoop ist ein auf Open AI basierendes Softwaretool.
+* **Apache Hadoop setzt sich aus einer Sammlung von Open-Source-Software zusammen.**
+
+**143. Frage 41 (Abschlussprüfung)** Welche Auswirkung/en ist/sind kurz- und mittelfristig durch den Einsatz von KI zu erwarten?
+* Autonome Wertschöpfung komplett ohne menschliche Beteiligung
+* **Disruptive Anwendungsfälle, die zu einer Neuausrichtung von kompletten Geschäftsmodellen führen.**
+* **Kontinuierliche Verbesserung bestehender Prozesse**
+* **Hochgradige Effizienzgewinne durch fortschreitende Automatisierung**
+
+**144. Frage 07 (Abschlussprüfung)** Welche Aussagen in Bezug auf Internet of Things (IoT) sind richtig?
+* **IoT verbindet die physische mit der digitalen Welt, indem es Daten aus der realen Umgebung sammelt und in virtuelle Informationssysteme integriert, wo sie verarbeitet und genutzt werden.**
+* **IoT bezeichnet ein Netzwerk physischer Geräte, die durch Sensoren, Software und Konnektivität miteinander verbunden sind und Daten austauschen können.**
+* IoT ist die Anpassung der Digitalisierungsstrategie.
+* **IoT-Anwendungen erfassen, übertragen und analysieren Sensordaten, um daraus verwertbare Erkenntnisse zu gewinnen und automatisierte Aktionen auszulösen.**
+
+**145. Frage 03 (Abschlussprüfung)** Durch welche Elemente profitiert KI von der Nutzung von Edge-Computing?
+* **Daten können in der Nähe ihrer Quelle über lokales Identitätsmanagement und anwendungsspezifische Zugriffsrichtlinien und unter Einhaltung lokaler Vorschriften gesichert werden.**
+* Die Zentralisierung von Daten in einem PC
+* **Lokalisierung der Datenerfassung und -speicherung ermöglicht die Vorverarbeitung der Daten.**
+* **Eine schnellere und effizientere Entscheidungsfindung kann durch die Platzierung von Algorithmen des Maschinellen Lernens auf den Edge-Geräten erreicht werden.**
+
+**146. Frage 01 (Abschlussprüfung)** Welche der folgenden Elemente gelten als die vier „V“ von Big Data?
+* Vividness
+* **Veracity**
+* Vagility
+* **Volume**
+
+**147. Frage 38 (Abschlussprüfung)** Durch welche Aussage wird das explosionsartige Datenwachstum der letzten Jahre annähernd beschrieben?
+* Die Gesamtmenge aller Daten verdoppelt sich alle elf Stunden.
+* Das Wachstum der weltweiten Datenmenge D wird durch die Funktion f(D) = D/100 beschrieben.
+* **Die Hälfte aller heute verfügbaren Daten ist in den letzten zwei Jahren entstanden.**
+* Pro Sekunde entstehen weltweit etwa 1 GB an Daten.
+
+**148. Frage 08 (Abschlussprüfung)** Welche Aussagen in Bezug auf Big Data im Gesundheitswesen sind richtig?
+* Im Gesundheitswesen wird Big Data nach wie vor eine untergeordnete Rolle spielen.
+* Die Implementierung von Big Data-Technologien ist im Gesundheitswesen aus technologischer Sicht kaum realisierbar.
+* **Im Gesundheitswesen werden im Bereich Diagnose durch den Einsatz von Big Data gute Ergebnisse erzielt.**
+* Diagnostische Verfahren basierend auf Big Data können die Qualität fachärztlicher Diagnosen auch langfristig nicht erreichen.
+
+**149. Frage 40 (Abschlussprüfung)** Welche Aussage zum k-Nearest-Neighbors-Algorithmus ist korrekt?
+* Er ist ein Algorithmus des Unsupervised Learning.
+* **Er ist ein Lazy-Learning-Algorithmus.**
+* Er ist ein Algorithmus der generativen KI.
+* **Er ist ein nicht parametrisierter Algorithmus.**
+
+**150. Frage 13 (Abschlussprüfung)** Welche Aussagen bezüglich Daten sind korrekt?
+* **Im Allgemeinen unterscheidet man zwischen unstrukturierten und strukturierten Daten.**
+* Daten sind grundsätzlich immer unstrukturiert.
+* Eine Postleitzahl ist ein Beispiel für unstrukturierte Daten.
+* **Unstrukturierte Daten sind mehrdeutig.**
+`;
+
+        let quizQuestions = []; // Array to hold the 100 randomly selected questions
+        let currentQuestionIndex = 0;
+        let userAnswers = []; // To store user's selections and correctness
+        let quizTimer;
+        let timeRemaining = 90 * 60; // 90 minutes in seconds
+
+        const timerEl = document.getElementById('timer');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainerEl = document.getElementById('options-container');
+        const currentQuestionNumberEl = document.getElementById('current-question-number');
+        const totalQuestionsEl = document.getElementById('total-questions');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const readAloudBtn = document.getElementById('read-aloud-btn');
+        const agendaListEl = document.getElementById('agenda-list');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const toggleAgendaBtn = document.getElementById('toggle-agenda-btn');
+        const agendaSidebar = document.getElementById('agenda-sidebar');
+        const startScreen = document.getElementById('start-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultModal = document.getElementById('result-modal');
+        const correctAnswersCountEl = document.getElementById('correct-answers-count');
+        const totalQuestionsModalEl = document.getElementById('total-questions-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Function to parse the questions from the markdown string
+        function parseQuestions(markdown) {
+            const questions = [];
+            const lines = markdown.split('\n');
+            let currentQuestion = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                // Check for a new question line pattern: starts with '**' followed by digit and "Frage"
+                const questionHeaderMatch = line.match(/^\*\*(.*?)\*\*(.*)/); // Capture content inside ** and after
+                if (questionHeaderMatch && (questionHeaderMatch[1].includes('Frage') || questionHeaderMatch[1].includes('Abschlussprüfung'))) {
+                    if (currentQuestion) {
+                        questions.push(currentQuestion); // Add the previous question to the list
+                    }
+
+                    const fullQuestionTitle = questionHeaderMatch[1].trim(); // e.g., "1. Frage B - Frage 08"
+                    const pureQuestionText = questionHeaderMatch[2].trim(); // The actual question content
+
+                    currentQuestion = {
+                        id: questions.length, // Assign a new ID based on array length
+                        questionTitle: fullQuestionTitle, // Store the full title for agenda
+                        question: pureQuestionText, // Store the pure question text for quiz display
+                        options: [],
+                        correctAnswers: [],
+                        isMultiChoice: false, // Will be determined later
+                        userSelected: [],
+                        isAnswered: false,
+                        isCorrect: null
+                    };
+                } else if (currentQuestion && line.startsWith('*')) {
+                    // This is an option line
+                    let optionText = line.replace(/^\*\s/, '').trim(); // Remove leading '* '
+                    if (optionText.startsWith('**') && optionText.endsWith('**')) {
+                        // This is a correct answer (bold)
+                        currentQuestion.correctAnswers.push(optionText.replace(/\*\*/g, '').trim());
+                        currentQuestion.options.push(optionText.replace(/\*\*/g, '').trim()); // Store option without bold markers
+                    } else {
+                        // This is a normal option
+                        currentQuestion.options.push(optionText.trim());
+                    }
+                }
+            }
+
+            // Add the last question if it exists
+            if (currentQuestion) {
+                questions.push(currentQuestion);
+            }
+
+            // Determine isMultiChoice for all questions and shuffle options
+            questions.forEach(q => {
+                q.isMultiChoice = q.correctAnswers.length > 1;
+                // Shuffle options to randomize their display order for each question
+                q.options = shuffleArray(q.options);
+            });
+
+            return questions;
+        }
+
+        // Select 100 random questions
+        function selectRandomQuestions(allQuestions, count) {
+            const shuffled = shuffleArray([...allQuestions]);
+            return shuffled.slice(0, count);
+        }
+
+        // Initialize quiz: parse, select, and set up
+        function initializeQuiz() {
+            const allParsedQuestions = parseQuestions(questionsMarkdown);
+            quizQuestions = selectRandomQuestions(allParsedQuestions, 100);
+            userAnswers = Array(quizQuestions.length).fill(null).map(() => ({
+                selected: [],
+                isCorrect: null
+            })); // Reset user answers
+            currentQuestionIndex = 0;
+            timeRemaining = 90 * 60; // Reset timer
+            clearInterval(quizTimer); // Clear any existing timer
+            startTimer();
+            displayQuestion(currentQuestionIndex);
+            populateAgenda();
+            totalQuestionsEl.textContent = quizQuestions.length;
+            totalQuestionsModalEl.textContent = quizQuestions.length;
+            resultModal.classList.add('hidden'); // Hide modal if visible
+        }
+
+        // Display current question
+        function displayQuestion(index) {
+            if (index < 0 || index >= quizQuestions.length) {
+                // If out of bounds, prevent navigation and show results or stay on current question
+                if (index >= quizQuestions.length) {
+                    endQuiz();
+                }
+                return;
+            }
+
+            currentQuestionIndex = index;
+            const question = quizQuestions[currentQuestionIndex];
+
+            questionTextEl.textContent = question.question;
+            optionsContainerEl.innerHTML = ''; // Clear previous options
+            currentQuestionNumberEl.textContent = currentQuestionIndex + 1;
+
+            // Update button states
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === quizQuestions.length - 1 && !question.isAnswered; // Disable next if last question and not answered
+            // Enable next if last question is answered to see results
+            if (currentQuestionIndex === quizQuestions.length - 1 && question.isAnswered) {
+                nextBtn.textContent = 'Ergebnisse anzeigen';
+            } else {
+                nextBtn.textContent = 'Weiter';
+            }
+
+            // Populate options
+            question.options.forEach((option, i) => {
+                const optionId = `q${currentQuestionIndex}-option${i}`;
+                const inputType = question.isMultiChoice ? 'checkbox' : 'radio';
+
+                const optionDiv = document.createElement('div');
+                optionDiv.classList.add('flex', 'items-center', 'p-3', 'rounded-lg', 'border', 'border-gray-300', 'hover:bg-gray-50', 'transition-colors', 'duration-150');
+
+                const input = document.createElement('input');
+                input.type = inputType;
+                input.id = optionId;
+                input.name = `question-${currentQuestionIndex}`;
+                input.value = option;
+                input.classList.add('mr-3', 'h-5', 'w-5', 'text-blue-600', 'focus:ring-blue-500', 'rounded');
+
+                const label = document.createElement('label');
+                label.htmlFor = optionId;
+                label.classList.add('flex-1', 'cursor-pointer', 'text-gray-700');
+                label.textContent = option;
+
+                optionDiv.appendChild(input);
+                optionDiv.appendChild(label);
+                optionsContainerEl.appendChild(optionDiv);
+
+                // Pre-select user's previous choice if available
+                if (userAnswers[currentQuestionIndex] && userAnswers[currentQuestionIndex].selected.includes(option)) {
+                    input.checked = true;
+                }
+
+                // Apply feedback colors and disable if answered
+                if (question.isAnswered) {
+                    input.disabled = true;
+                    submitBtn.disabled = true; // Disable submit button once answered
+                    if (question.correctAnswers.includes(option)) {
+                        optionDiv.classList.add('bg-green-100'); // Correct answers are always green
+                    }
+                    if (userAnswers[currentQuestionIndex].selected.includes(option)) {
+                        if (question.isCorrect) {
+                            optionDiv.classList.add('bg-green-100');
+                        } else {
+                            // If the user selected this and the answer is wrong, mark it red.
+                            // Ensure correct answers are still green, even if user didn't pick them.
+                            if (!question.correctAnswers.includes(option)) { // Only mark red if it's a wrong selection
+                                optionDiv.classList.add('bg-red-100');
+                            }
+                        }
+                    }
+                } else {
+                    submitBtn.disabled = false; // Enable submit if not answered
+                }
+            });
+
+            // Highlight current question in agenda
+            const agendaItems = document.querySelectorAll('.agenda-item');
+            agendaItems.forEach((item, idx) => {
+                item.classList.remove('bg-blue-100', 'font-semibold', 'border-blue-500');
+                if (idx === currentQuestionIndex) {
+                    item.classList.add('bg-blue-100', 'font-semibold', 'border-blue-500');
+                    // Scroll agenda to current question
+                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        // Start the quiz timer
+        function startTimer() {
+            timerEl.classList.remove('hidden'); // Show timer
+            restartQuizBtn.classList.remove('hidden'); // Show restart button
+            quizTimer = setInterval(() => {
+                timeRemaining--;
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(quizTimer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        // Handle submitting an answer
+        function submitAnswer() {
+            const question = quizQuestions[currentQuestionIndex];
+            if (question.isAnswered) return; // Prevent resubmission
+
+            const selectedInputs = Array.from(optionsContainerEl.querySelectorAll(`input[name="question-${currentQuestionIndex}"]:checked`));
+            const selectedOptions = selectedInputs.map(input => input.value);
+
+            // Check correctness
+            let isCorrect = true;
+            if (question.isMultiChoice) {
+                // For multi-choice, all correct answers must be selected, and no incorrect ones.
+                if (selectedOptions.length !== question.correctAnswers.length ||
+                    !question.correctAnswers.every(ans => selectedOptions.includes(ans))) {
+                    isCorrect = false;
+                }
+            } else {
+                // For single choice
+                if (selectedOptions.length !== 1 || selectedOptions[0] !== question.correctAnswers[0]) {
+                    isCorrect = false;
+                }
+            }
+
+            question.isAnswered = true;
+            question.isCorrect = isCorrect;
+            userAnswers[currentQuestionIndex].selected = selectedOptions;
+            userAnswers[currentQuestionIndex].isCorrect = isCorrect;
+
+            // Update UI immediately
+            displayQuestion(currentQuestionIndex);
+            updateAgendaItem(currentQuestionIndex, isCorrect);
+        }
+
+        // Update agenda item with color feedback
+        function updateAgendaItem(index, isCorrect) {
+            const agendaItem = document.getElementById(`agenda-item-${index}`);
+            if (agendaItem) {
+                agendaItem.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+                agendaItem.classList.add(isCorrect ? 'bg-green-100' : 'bg-red-100', 'border-l-4');
+                agendaItem.classList.add(isCorrect ? 'border-green-500' : 'border-red-500');
+
+                // Show correct answers in agenda after submission
+                const question = quizQuestions[index];
+                let answerText = '';
+                if (question.isMultiChoice) {
+                    answerText = 'Richtig: ' + question.correctAnswers.join(' / ');
+                } else {
+                    answerText = 'Richtig: ' + question.correctAnswers[0];
+                }
+
+                // Prevent adding duplicate answers to agenda on re-submission or re-display
+                if (!agendaItem.querySelector('.answer-display')) {
+                    const answerEl = document.createElement('p');
+                    answerEl.classList.add('text-xs', 'text-gray-500', 'mt-1', 'answer-display');
+                    answerEl.textContent = answerText;
+                    agendaItem.appendChild(answerEl);
+                }
+            }
+        }
+
+
+        // Populate the agenda sidebar
+        function populateAgenda() {
+            agendaListEl.innerHTML = ''; // Clear existing list
+            quizQuestions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.id = `agenda-item-${index}`;
+                div.classList.add('agenda-item', 'p-2', 'mb-2', 'rounded-md', 'cursor-pointer', 'bg-gray-100', 'hover:bg-gray-200', 'transition-colors', 'duration-150', 'border', 'border-gray-200');
+                // Use questionTitle for agenda, and truncate the question text for brevity
+                div.textContent = `${q.questionTitle}: ${q.question.substring(0, 50)}...`;
+                div.onclick = () => displayQuestion(index);
+                agendaListEl.appendChild(div);
+
+                // If already answered, apply color and show correct answer immediately
+                if (quizQuestions[index].isAnswered) {
+                    updateAgendaItem(index, quizQuestions[index].isCorrect);
+                }
+            });
+        }
+
+        // Read question aloud
+        function readQuestion() {
+            if ('speechSynthesis' in window) {
+                const question = quizQuestions[currentQuestionIndex];
+                let textToSpeak = question.question + '. Optionen: ';
+                question.options.forEach((opt, idx) => {
+                    textToSpeak += `${String.fromCharCode(65 + idx)}) ${opt}. `; // A), B), C)...
+                });
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'de-DE'; // Set language to German
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported in this browser.');
+                // In a real app, you'd show a user-friendly message here.
+            }
+        }
+
+        // End the quiz and show results
+        function endQuiz() {
+            clearInterval(quizTimer); // Stop the timer
+            let correctCount = userAnswers.filter(ans => ans.isCorrect === true).length;
+            correctAnswersCountEl.textContent = correctCount;
+            resultModal.classList.remove('hidden');
+            // Disable all quiz controls
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            submitBtn.disabled = true;
+            readAloudBtn.disabled = true;
+            Array.from(optionsContainerEl.querySelectorAll('input')).forEach(input => input.disabled = true);
+        }
+
+        // Event Listeners
+        prevBtn.addEventListener('click', () => {
+            displayQuestion(currentQuestionIndex - 1);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex === quizQuestions.length - 1 && quizQuestions[currentQuestionIndex].isAnswered) {
+                endQuiz();
+            } else {
+                displayQuestion(currentQuestionIndex + 1);
+            }
+        });
+
+        submitBtn.addEventListener('click', submitAnswer);
+        readAloudBtn.addEventListener('click', readQuestion);
+        restartQuizBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            quizContainer.classList.add('hidden');
+            timerEl.classList.add('hidden');
+            restartQuizBtn.classList.add('hidden');
+            agendaSidebar.classList.add('hidden');
+            // No need to re-initialize here, it will happen on "start-quiz-btn" click
+        });
+        closeModalBtn.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
+        });
+
+        startQuizBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            initializeQuiz(); // This will also start the timer
+        });
+
+        toggleAgendaBtn.addEventListener('click', () => {
+            agendaSidebar.classList.toggle('hidden');
+            if (agendaSidebar.classList.contains('hidden')) {
+                toggleAgendaBtn.textContent = 'Agenda einblenden';
+                document.querySelector('main').classList.remove('md:flex-row'); // Adjust main layout
+                document.querySelector('main').classList.add('md:flex-col');
+                document.querySelector('section').classList.remove('md:w-3/4');
+                document.querySelector('section').classList.add('md:w-full');
+
+            } else {
+                toggleAgendaBtn.textContent = 'Agenda ausblenden';
+                document.querySelector('main').classList.add('md:flex-row'); // Adjust main layout
+                document.querySelector('main').classList.remove('md:flex-col');
+                document.querySelector('section').classList.add('md:w-3/4');
+                document.querySelector('section').classList.remove('md:w-full');
+            }
+        });
+
+        // Initialize display state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            startScreen.classList.remove('hidden');
+            quizContainer.classList.add('hidden');
+            timerEl.classList.add('hidden');
+            restartQuizBtn.classList.add('hidden');
+            agendaSidebar.classList.add('hidden'); // Ensure agenda is hidden on load
+            toggleAgendaBtn.textContent = 'Agenda einblenden'; // Initial button text
+        });
+    </script>
+</body>
+</html>
